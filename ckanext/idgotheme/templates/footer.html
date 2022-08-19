@@ -1,27 +1,47 @@
-{% set url_site_wp = h.idgotheme_get_url_wp() %}
+{% set href_accessibility = h.idgotheme_href_accessibility() %}
+{% set href_terms_and_conditions = h.idgotheme_href_terms_and_conditions() %}
+{% set href_legal_notices = h.idgotheme_href_legal_notices() %}
+{% set href_contact = h.idgotheme_href_contact() %}
+{% set href_site_map = h.idgotheme_href_site_map() %}
+{% set href_credit = h.idgotheme_href_credit() %}
+{% set href_gdpr = h.idgotheme_href_gdpr() %}
 
 <footer id="colophon" class="site-footer" role="contentinfo">
   <div class="wrap">
+<<<<<<< HEAD
    <div>
     <aside class="widget-area" role="complementary">
+=======
+    <div class="widget-area" role="complementary">
+>>>>>>> 1ef4a8de6dca2750c9ef795de2057c1daaab1ecd
       <div class="widget-column footer-widget-1">
         <section id="nav_menu-2" class="widget widget_nav_menu">
           <div class="menu-menu-footer-container">
-            <ul id="menu-menu-footer" class="menu">
+            <ul id="menu-menu-footer" class="menu">{% if href_accessibility %}
               <li id="menu-item-65" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-65">
                 <i class="fa fa-caret-right" aria-hidden="true"></i>
-                <a href="{{ url_site_wp }}/accessibilite/">Accessibilité</a>
-              </li>
+                <a href="{{ href_accessibility }}">Accessibilité</a>
+              </li>{% endif %}{% if href_legal_notices %}
               <li id="menu-item-61" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-61">
                 <i class="fa fa-caret-right" aria-hidden="true"></i>
+<<<<<<< HEAD
                 <a href="{{ url_site_wp }}/mentions-legales/">Mentions légales</a>
               </li>
+=======
+                <a href="{{ href_legal_notices }}">Mentions légales</a>
+              </li>{% endif %}{% if href_terms_and_conditions %}
+              <li id="menu-item-158" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-158">
+                <i class="fa fa-caret-right" aria-hidden="true"></i>
+                <a href="{{ href_terms_and_conditions }}">Conditions d&#8217;utilisation</a>
+              </li>{% endif %}{% if href_site_map %}
+>>>>>>> 1ef4a8de6dca2750c9ef795de2057c1daaab1ecd
               <li id="menu-item-60" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-60">
                 <i class="fa fa-caret-right" aria-hidden="true"></i>
-                <a href="{{ url_site_wp }}/plan-du-site/">Plan du site</a>
-              </li>
+                <a href="{{ href_site_map }}">Plan du site</a>
+              </li>{% endif %}{% if href_contact %}
               <li id="menu-item-64" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-64">
                 <i class="fa fa-caret-right" aria-hidden="true"></i>
+<<<<<<< HEAD
                 <a href="{{ url_site_wp }}/contactez-nous/">Contactez-nous</a>
               </li>
               <li id="menu-item-158" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-158">
@@ -32,10 +52,23 @@
                 <i class="fa fa-caret-right" aria-hidden="true"></i>
                 <a href="{{ url_site_wp }}/donnees-a-caractere-personnel/">Données personnelles</a>
               </li>
+=======
+                <a href="{{ href_contact }}">Contactez-nous</a>
+              </li>{% endif %}{% if href_credit %}
+              <li id="menu-item-63" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-63">
+                <i class="fa fa-caret-right" aria-hidden="true"></i>
+                <a href="{{ href_credit }}">Crédit</a>
+              </li>{% endif %}{% if href_gdpr %}
+              <li id="menu-item-63" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-63">
+                <i class="fa fa-caret-right" aria-hidden="true"></i>
+                <a href="{{ href_gdpr }}">RGPD</a>
+              </li>{% endif %}
+>>>>>>> 1ef4a8de6dca2750c9ef795de2057c1daaab1ecd
             </ul>
           </div>
         </section>
       </div>
+<<<<<<< HEAD
     </aside>
     <ul class="soutien_financier">
       <li>
@@ -83,10 +116,13 @@
           <a href="https://twitter.com/sud_territoire?lang=fr" target="blank">@sud_territoire</a>
         </div>
       </div>
+=======
+>>>>>>> 1ef4a8de6dca2750c9ef795de2057c1daaab1ecd
     </div>
   </div>
   <div class="site-info">
     <div class="wrap">
+<<<<<<< HEAD
       <p>© 2018 -  <span id='current_year'></span> - <a href="https://www.maregionsud.fr" target="_blank">Région Sud</a> | Tous droits réservés</p>
     </div>
     <script>(function() { document.getElementById('current_year').innerHTML = (new Date()).getFullYear(); })();</script>
@@ -241,3 +277,16 @@
     </symbol>
   </defs>
 </svg>
+=======
+      © Tous droits réservés - <span id="current-year"></span> - <a href="http://www.neogeo.fr" target="_blank">Neogeo Technologies</a>
+    </div>
+  </div>
+</footer>
+<script>
+(function() {
+  with (this) {
+    document.getElementById("current-year").textContent = (new Date()).getFullYear();
+  }
+})();
+</script>
+>>>>>>> 1ef4a8de6dca2750c9ef795de2057c1daaab1ecd

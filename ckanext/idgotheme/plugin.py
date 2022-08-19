@@ -1,10 +1,26 @@
 # coding: utf-8
 
-from .validation import force_resource_url_type
-from .validation import scheming_datasetfield_null_if_empty
-from .validation import scheming_replace_created_date
-from .validation import scheming_replace_modified_date
-import ckan.authz as authz
+# Copyright (c) 2017-2020 Neogeo-Technologies.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+from collections import OrderedDict
+import json
+from logging import getLogger
+import requests
+
 from ckan.common import c
 from ckan.common import config
 import ckan.lib.helpers as h
@@ -12,12 +28,32 @@ import ckan.model as model
 import ckan.plugins as p
 import ckan.plugins.toolkit as toolkit
 from ckanext.scheming.plugins import _SchemingMixin
-from collections import OrderedDict
-import json
-from logging import getLogger
-import requests
+
+from .validation import force_resource_url_type
+from .validation import scheming_datasetfield_null_if_empty
+from .validation import scheming_replace_created_date
+from .validation import scheming_replace_modified_date
+
 
 log = getLogger(__name__)
+
+
+def get_platform_name():
+    return config.get('ckanext.idgotheme.name', r'IDGO').decode('utf-8')
+
+
+def get_readthedocs_url():
+    return config.get('ckanext.idgotheme.readthedocs', None)
+
+
+def get_default_extent():
+    extent = config.get('ckanext.idgotheme.extent', r'-5.6 41 9.9 51.4').split()
+    try:
+        return [[float(extent[1]), float(extent[0])],
+                [float(extent[3]), float(extent[2])]].__str__()
+    except Exception as e:
+        log.error(e)
+        return [[-5.6, 41], [9.9, 51.4]].__str__()
 
 
 def get_url_wp():
@@ -33,12 +69,54 @@ def get_url_publier():
 def get_url_extracteur():
     return config.get('ckanext.idgotheme.url_site_extracteur', '')
 
+def get_url_rawgraphs():
+    return config.get('ckanext.idgotheme.url_rawgraphs', '')
+
+def get_url_site_wp():
+    url_site_wp = config.get('ckanext.idgotheme.url_site_wp', '')
+    return url_site_wp
+
+
+def href_accessibility():
+    return config.get('ckanext.idgotheme.href_accessibility')
+
+
+def href_terms_and_conditions():
+    return config.get('ckanext.idgotheme.href_terms_and_conditions')
+
+
+def href_legal_notices():
+    return config.get('ckanext.idgotheme.href_legal_notices')
+
+
+def href_contact():
+    return config.get('ckanext.idgotheme.href_contact')
+
+
+def href_site_map():
+    return config.get('ckanext.idgotheme.href_site_map')
+
+
+def href_credit():
+    return config.get('ckanext.idgotheme.href_credit')
+
+def href_gdpr():
+    return config.get('ckanext.idgotheme.href_gdpr')
+
+
+def get_matomo_site_url():
+    return config.get('ckanext.idgotheme.matomo_site_url', '')
+
+
+def get_matomo_site_id():
+    return config.get('ckanext.idgotheme.matomo_site_id', '')
+
 
 # Traduction "Groupes" en "Thématiques"
-THEMATIQUE_MIN = u'thématique'
-THEMATIQUE_MAJ = u'Thématique'
-THEMATIQUES_MIN = u'thématiques'
-THEMATIQUES_MAJ = u'Thématiques'
+THEMATIQUE_MIN = u"thématique"
+THEMATIQUE_MAJ = u"Thématique"
+THEMATIQUES_MIN = u"thématiques"
+THEMATIQUES_MAJ = u"Thématiques"
 
 
 def trad_thematique_min():
@@ -57,15 +135,22 @@ def trad_thematiques_maj():
     return THEMATIQUES_MAJ
 
 
+<<<<<<< HEAD
 def is_partner():
+=======
+def is_idgo_partner():
+>>>>>>> 1ef4a8de6dca2750c9ef795de2057c1daaab1ecd
     if not c.userobj:
         return False
     if c.userobj.sysadmin:
         return True
 
+    # /!\ TODO /!\
+    # => Affectuer filtre sur le nom du groupe pas sur le type !
     partner_group_id = model.Session.query(model.Group) \
         .filter(model.Group.type == 'partner') \
         .first().id
+    # /!\ TODO /!\
 
     query = model.Session.query(model.Member) \
         .filter(model.Member.state == 'active') \
@@ -77,19 +162,25 @@ def is_partner():
 
 
 def get_ihm_settings():
+    data = {
+        'download-modal-res-list': {
+            'active': False,
+            'content': '',
+        }
+    }
+
     url = get_url_publier() + "/ihm/ckan/settings"
     try:
         r = requests.get(url)
     except Exception as err:
         log.error(err)
-        return {
-            'download-modal-res-list': {
-                'active': True,
-                'content': '',
-            }
-        }
     else:
-        return r.json()
+        # Résout #8789 avec try..except
+        try:
+            data.update(r.json())
+        except json.decoder.JSONDecodeError:
+            pass
+    return data
 
 
 def get_proxified_service_url(package_id, resource_id):
@@ -97,7 +188,8 @@ def get_proxified_service_url(package_id, resource_id):
         action='proxy_service',
         controller='ckanext.geoview.controllers.service_proxy:ServiceProxyController',
         id=package_id,
-        resource_id=resource_id)
+        resource_id=resource_id,
+    )
 
 
 class IdgothemePlugin(p.SingletonPlugin, _SchemingMixin):
@@ -115,17 +207,36 @@ class IdgothemePlugin(p.SingletonPlugin, _SchemingMixin):
     # ITemplateHelpers : Custom Helpers functions
     def get_helpers(self):
         return {
+            'idgotheme_href_accessibility': href_accessibility,
+            'idgotheme_href_terms_and_conditions': href_terms_and_conditions,
+            'idgotheme_href_legal_notices': href_legal_notices,
+            'idgotheme_href_contact': href_contact,
+            'idgotheme_href_site_map': href_site_map,
+            'idgotheme_href_credit': href_credit,
+            'idgotheme_href_gdpr': href_gdpr,
             'idgotheme_get_url_wp': get_url_wp,
             'idgotheme_get_url_publier': get_url_publier,
             'idgotheme_get_url_extracteur': get_url_extracteur,
+            'idgotheme_get_url_rawgraphs': get_url_rawgraphs,
+            'idgotheme_get_matomo_site_url': get_matomo_site_url,
+            'idgotheme_get_matomo_site_id': get_matomo_site_id,
             'trad_thematique_min': trad_thematique_min,
             'trad_thematique_maj': trad_thematique_maj,
             'trad_thematiques_min': trad_thematiques_min,
             'trad_thematiques_maj': trad_thematiques_maj,
+<<<<<<< HEAD
             'is_partner': is_partner,
+=======
+            'is_idgo_partner': is_idgo_partner,
+>>>>>>> 1ef4a8de6dca2750c9ef795de2057c1daaab1ecd
             'proxy_export': self.proxy_export,
             'get_res_api': self.get_res_api,
+            'get_res_wms_capabilities_url': self.get_res_wms_capabilities_url,
+            'get_res_wfs_capabilities_url': self.get_res_wfs_capabilities_url,
             'get_ihm_settings': get_ihm_settings,
+            'get_platform_name': get_platform_name,
+            'get_readthedocs_url': get_readthedocs_url,
+            'get_default_extent': get_default_extent,
         }
 
     def get_validators(self):
@@ -150,6 +261,22 @@ class IdgothemePlugin(p.SingletonPlugin, _SchemingMixin):
                 api[key] = api.pop(key).replace(api['url'], service_url)
         return api
 
+    def get_res_wms_capabilities_url(self, url):
+        urlsplit = url.split('#')
+        url = urlsplit[0]
+        layername = len(urlsplit) == 2 and urlsplit[1] or None
+        if url.endswith('?'):
+            url = url[:-1]
+        return '%s?SERVICE=WMS&REQUEST=GetCapabilities' % url, layername
+
+    def get_res_wfs_capabilities_url(self, url):
+        urlsplit = url.split('#')
+        url = urlsplit[0]
+        layername = len(urlsplit) == 2 and urlsplit[1] or None
+        if url.endswith('?'):
+            url = url[:-1]
+        return '%s?SERVICE=WFS&REQUEST=GetCapabilities' % url, layername
+
     # IConfigurer
     def update_config(self, config_):
         toolkit.add_template_directory(config_, 'templates')
@@ -163,15 +290,15 @@ class IdgothemePlugin(p.SingletonPlugin, _SchemingMixin):
             return OrderedDict({'tags': u'Mots-clés'})
         else:
             return OrderedDict([
-                ('organization', u'Organisations'),
-                ('groups', u'Thématiques'),
-                ('datatype', u'Types'),
-                ('support', u'Supports'),
-                ('res_format', u'Formats'),
-                ('license_id', u'Licences'),
-                ('tags', u'Mots-clés'),
-                ('frequency', u'Fréquence de mise à jour'),
-                ('granularity', u'Granularité de la couverture territoriale'),
+                ('organization', u"Organisations"),
+                ('groups', u"Thématiques"),
+                ('datatype', u"Types"),
+                ('support', u"Supports"),
+                ('res_format', u"Formats"),
+                ('license_id', u"Licences"),
+                ('tags', u"Mots-clés"),
+                ('frequency', u"Fréquence de mise à jour"),
+                ('granularity', u"Granularité de la couverture territoriale"),
             ])
 
     # IPackageController
@@ -183,16 +310,15 @@ class IdgothemePlugin(p.SingletonPlugin, _SchemingMixin):
         m.connect(
             '/dataset/export',
             controller='ckanext.idgotheme.controller:ExportController',
-            action='query_export')
+            action='query_export',
+        )
         return m
 
     def proxy_export(self, resformat, *args):
-        export_args = dict(list(args)[0].params)
-        data_path = args[0].path.split("/")
-
-        url = h.url_for(
+        kw = dict(list(args)[0].params)
+        return h.url_for(
             action='query_export',
             controller='ckanext.idgotheme.controller:ExportController',
             resformat=resformat,
-            **dict(export_args))
-        return url
+            **kw
+        )
